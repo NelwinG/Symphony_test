@@ -104,12 +104,38 @@ class TodoController extends AbstractController
     /**
      * @Route("/showall", name="show_all_todo")
      */
-    public function showAll(ManagerRegistry $doctrine): Response
+    public function showAll(ManagerRegistry $doctrine, Request $request): Response
     {
+
+        $entityManager = $doctrine->getManager();
+
+        $todo = new TodoList();
+
+
+        $form = $this->createForm(NewTodo::class, $todo);
+
+        $form->handleRequest($request);
+        
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // $form->getData() holds the submitted values
+            // but, the original `$task` variable has also been updated
+            $todo = $form->getData();
+
+            $entityManager->persist($todo);
+            $entityManager->flush();
+
+            // ... perform some action, such as saving the task to the database
+
+            return $this->redirectToRoute('show_all_todo');
+        }
 
         $todo = $doctrine->getRepository(TodoList::class)->findAll();
 
-        return $this->render('todo/showall.html.twig', ['todo' => $todo]);
+        return $this->renderForm('todo/showall.html.twig', [
+            'todo' => $todo,
+            'form' => $form
+        ]);
 
         // or render a template
         // in the template, print things with {{ product.name }}
